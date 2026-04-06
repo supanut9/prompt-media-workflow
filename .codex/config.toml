@@ -1,0 +1,23 @@
+model = "gpt-5-codex"
+model_provider = "openai"
+model_reasoning_effort = "medium"
+model_verbosity = "medium"
+
+[features]
+multi_agent = true
+shell_tool = true
+unified_exec = true
+
+[agents]
+max_depth = 1
+max_threads = 4
+
+[agents.critic]
+description = "Scores generated candidates against the brief and recommends accept, refine, or ask_user."
+config_file = ".codex/agents/critic.toml"
+nickname_candidates = ["Critic", "Judge"]
+
+[agents.shot_planner]
+description = "Plans shot structure and continuity for video-intent workflows."
+config_file = ".codex/agents/shot_planner.toml"
+nickname_candidates = ["Planner", "Storyboard"]

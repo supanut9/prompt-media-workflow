@@ -1,0 +1,59 @@
+{
+  "orchestrator": {
+    "provider": "openai",
+    "api_mode": "responses",
+    "model": "gpt-5",
+    "use_structured_outputs": true
+  },
+  "capabilities": {
+    "prompt_analysis": {
+      "enabled": true,
+      "implementation_stage": "prompt_analysis",
+      "subagent": false
+    },
+    "clarification": {
+      "enabled": true,
+      "implementation_stage": "clarification",
+      "subagent": false,
+      "max_questions_per_turn": 3,
+      "max_turns": 2
+    },
+    "brief_building": {
+      "enabled": true,
+      "implementation_stage": "brief_building",
+      "subagent": false
+    },
+    "shot_planning": {
+      "enabled": true,
+      "implementation_stage": "shot_planning",
+      "subagent": false,
+      "codex_agent_role": "shot_planner"
+    },
+    "candidate_critique": {
+      "enabled": true,
+      "implementation_stage": "candidate_critique",
+      "subagent": false,
+      "codex_agent_role": "critic"
+    },
+    "refinement_planning": {
+      "enabled": true,
+      "implementation_stage": "refinement_planning",
+      "subagent": false
+    }
+  },
+  "tools": {
+    "generate_image_candidates": true,
+    "save_workflow_record": true,
+    "save_brief": true,
+    "load_candidate": true,
+    "save_critic_result": true,
+    "export_final_asset": true
+  },
+  "rendering": {
+    "backend": "comfyui",
+    "model": "sdxl",
+    "candidate_count": 4,
+    "width": 1024,
+    "height": 1024
+  }
+}
