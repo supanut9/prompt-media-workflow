@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from prompt_media_workflow.models import CandidateRecord, CreativeBrief, ShotPlan, WorkflowRecord
 from prompt_media_workflow.tools.generate_image_candidates import generate_image_candidates
+
+ARTIFACT_ROOT = Path("artifacts")
 
 
 def generate_candidates(
@@ -21,6 +25,8 @@ def generate_candidates(
     )
     candidates: list[CandidateRecord] = []
     for record in response.get("generated_candidates", []):
+        asset_uri = record["asset_uri"]
+        ensure_artifact(asset_uri)
         candidates.append(
             CandidateRecord(
                 candidate_id=record["candidate_id"],
@@ -32,7 +38,7 @@ def generate_candidates(
                 prompt_version=workflow.current_prompt_version,
                 generation_stage="initial",
                 input_references=record.get("input_references", []),
-                asset_uri=record["asset_uri"],
+                asset_uri=asset_uri,
                 thumbnail_uri=record.get("thumbnail_uri"),
                 seed=record.get("seed"),
                 backend=record.get("backend"),
@@ -42,3 +48,12 @@ def generate_candidates(
             )
         )
     return candidates
+
+
+def ensure_artifact(asset_uri: str) -> None:
+    path = Path(asset_uri)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_bytes(b"")

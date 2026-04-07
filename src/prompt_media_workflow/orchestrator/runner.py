@@ -8,6 +8,14 @@ from prompt_media_workflow.stages.generation import generate_candidates
 from prompt_media_workflow.stages.prompt_analysis import analyze_prompt
 from prompt_media_workflow.stages.refiner import plan_refinement
 from prompt_media_workflow.stages.shot_planning import build_shot_plan
+from prompt_media_workflow.tools.persistence import (
+    save_brief,
+    save_candidates,
+    save_critic_result,
+    save_refiner_output,
+    save_shot_plan,
+    save_workflow,
+)
 
 
 class WorkflowRunner:
@@ -37,6 +45,16 @@ class WorkflowRunner:
             else None
         )
 
+        save_brief(brief)
+        if shot_plan:
+            save_shot_plan(shot_plan)
+        if candidates:
+            save_candidates(candidates)
+        if critic_result:
+            save_critic_result(critic_result)
+        if refiner:
+            save_refiner_output(refiner)
+
         workflow.medium = analysis.medium
         workflow.current_brief_id = brief.brief_id
         if primary_candidate:
@@ -44,6 +62,7 @@ class WorkflowRunner:
             workflow.status = "reviewing"
         else:
             workflow.status = "ready"
+        save_workflow(workflow)
         return {
             "workflow": workflow.model_dump(),
             "analysis": analysis.model_dump(),
