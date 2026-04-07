@@ -13,6 +13,8 @@ WorkflowStatus = Literal[
 CandidateStatus = Literal["generated", "scored", "selected", "rejected", "refining", "accepted"]
 AnalysisAction = Literal["ask", "generate", "reject"]
 CriticRecommendation = Literal["accept", "refine", "ask_user", "reject"]
+GenerationStage = Literal["initial", "reference", "refinement", "video_render"]
+BackendType = Literal["comfyui", "diffusers", "openai", "replicate", "custom"]
 
 
 def utc_now() -> str:
@@ -108,6 +110,70 @@ class CreativeBrief(BaseModel):
     negative_prompt: list[str] = Field(default_factory=list)
 
 
+class ShotDetail(BaseModel):
+    shot_id: str
+    duration_seconds: float
+    purpose: str
+    composition: str
+    subject_action: str
+    camera_motion: str
+    environment_motion: str | None = None
+    continuity_rules: list[str] = Field(default_factory=list)
+
+
+class ShotPlan(BaseModel):
+    shot_plan_id: str
+    workflow_id: str
+    brief_id: str
+    duration_seconds: float
+    shots: list[ShotDetail]
+    keyframe_requirements: list[str] = Field(default_factory=list)
+
+
+class CandidateRecord(BaseModel):
+    candidate_id: str
+    workflow_id: str
+    medium: Medium
+    brief_id: str
+    shot_plan_id: str | None = None
+    parent_candidate_id: str | None = None
+    prompt_version: int = 1
+    generation_stage: GenerationStage = "initial"
+    input_references: list[str] = Field(default_factory=list)
+    asset_uri: str
+    thumbnail_uri: str | None = None
+    seed: int | None = None
+    backend: BackendType | None = None
+    model: str | None = None
+    critic_score: float | None = None
+    status: CandidateStatus = "generated"
+
+
+class CriticScores(BaseModel):
+    prompt_match: float
+    style_match: float
+    composition: float | None = None
+    subject_quality: float | None = None
+    motion_quality: float | None = None
+    continuity: float | None = None
+    identity_consistency: float | None = None
+    artifact_penalty: float | None = None
+
+
+class CriticResult(BaseModel):
+    candidate_id: str
+    brief_id: str
+    scores: CriticScores
+    failures: list[str] = Field(default_factory=list)
+    recommendation: CriticRecommendation
+    refinement_instruction: str | None = None
+
+
+class RefinerOutput(BaseModel):
+    parent_candidate_id: str
+    refinement_prompt_delta: str
+    preserve_constraints: list[str] = Field(default_factory=list)
+
+
 class AppConfig(BaseModel):
     raw: dict
-

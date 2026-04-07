@@ -4,6 +4,7 @@ from prompt_media_workflow.models import IntakeRequest, WorkflowRecord
 from prompt_media_workflow.stages.brief_building import build_brief
 from prompt_media_workflow.stages.clarification import build_clarification_turn
 from prompt_media_workflow.stages.prompt_analysis import analyze_prompt
+from prompt_media_workflow.stages.shot_planning import build_shot_plan
 
 
 class WorkflowRunner:
@@ -23,6 +24,7 @@ class WorkflowRunner:
         analysis = analyze_prompt(workflow, request)
         clarification = build_clarification_turn(analysis) if analysis.next_action == "ask" else None
         brief = build_brief(workflow, analysis, answers=answers)
+        shot_plan = build_shot_plan(workflow, brief, duration_hint=answers.get("duration") if answers else None)
         workflow.medium = analysis.medium
         workflow.current_brief_id = brief.brief_id
         workflow.status = "ready"
@@ -31,5 +33,5 @@ class WorkflowRunner:
             "analysis": analysis.model_dump(),
             "clarification": clarification.model_dump() if clarification else None,
             "brief": brief.model_dump(),
+            "shot_plan": shot_plan.model_dump() if shot_plan else None,
         }
-
