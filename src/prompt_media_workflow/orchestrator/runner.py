@@ -38,12 +38,21 @@ class WorkflowRunner:
         clarification = build_clarification_turn(analysis) if analysis.next_action == "ask" else None
         brief = build_brief(workflow, analysis, answers=answers)
         shot_plan = build_shot_plan(workflow, brief, duration_hint=answers.get("duration") if answers else None)
-        candidate_count = (
-            self.app_config.get("rendering", {}).get("candidate_count", 4)
-            if isinstance(self.app_config, dict)
-            else 4
+        rendering_cfg = self.app_config.get("rendering", {}) if isinstance(self.app_config, dict) else {}
+        candidate_count = rendering_cfg.get("candidate_count", 4)
+        candidates = generate_candidates(
+            workflow,
+            brief,
+            shot_plan=shot_plan,
+            candidate_count=candidate_count,
+            backend=rendering_cfg.get("backend"),
+            model_name=rendering_cfg.get("model"),
+            width=rendering_cfg.get("width", 1024),
+            height=rendering_cfg.get("height", 1024),
+            quality=rendering_cfg.get("quality"),
+            background=rendering_cfg.get("background"),
+            output_format=rendering_cfg.get("format", "png"),
         )
-        candidates = generate_candidates(workflow, brief, shot_plan=shot_plan, candidate_count=candidate_count)
         primary_candidate = candidates[0] if candidates else None
         critic_result = critique_candidate(primary_candidate, brief) if primary_candidate else None
         refiner = (

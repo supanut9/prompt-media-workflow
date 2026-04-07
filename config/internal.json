@@ -50,10 +50,13 @@
     "export_final_asset": true
   },
   "rendering": {
-    "backend": "comfyui",
-    "model": "sdxl",
+    "backend": "openai",
+    "model": "gpt-image-1.5",
     "candidate_count": 4,
     "width": 1024,
-    "height": 1024
+    "height": 1024,
+    "quality": "medium",
+    "background": "opaque",
+    "format": "png"
   }
 }
