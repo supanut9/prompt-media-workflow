@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from prompt_media_workflow.config import load_dotenv
+from prompt_media_workflow.config import load_dotenv, load_internal_config
 from prompt_media_workflow.models import IntakeRequest
 from prompt_media_workflow.orchestrator.runner import WorkflowRunner
 
@@ -16,7 +16,8 @@ def main() -> None:
     args = parser.parse_args()
 
     request = IntakeRequest(raw_prompt=args.prompt, user_medium_hint=args.medium)
-    runner = WorkflowRunner()
+    config = load_internal_config()
+    runner = WorkflowRunner(app_config=config)
     result = runner.run_text_pipeline(request)
     print(json.dumps(result, indent=2))
 

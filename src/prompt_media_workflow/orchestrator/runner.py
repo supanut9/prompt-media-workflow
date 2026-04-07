@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from prompt_media_workflow.config import load_internal_config
 from prompt_media_workflow.models import IntakeRequest, WorkflowRecord
 from prompt_media_workflow.stages.brief_building import build_brief
 from prompt_media_workflow.stages.clarification import build_clarification_turn
@@ -19,8 +20,9 @@ from prompt_media_workflow.tools.persistence import (
 
 
 class WorkflowRunner:
-    def __init__(self, workflow_prefix: str = "wf") -> None:
+    def __init__(self, workflow_prefix: str = "wf", app_config: dict | None = None) -> None:
         self.workflow_prefix = workflow_prefix
+        self.app_config = app_config or load_internal_config()
 
     def create_workflow(self, request: IntakeRequest, ordinal: int = 1) -> WorkflowRecord:
         return WorkflowRecord(
@@ -36,7 +38,12 @@ class WorkflowRunner:
         clarification = build_clarification_turn(analysis) if analysis.next_action == "ask" else None
         brief = build_brief(workflow, analysis, answers=answers)
         shot_plan = build_shot_plan(workflow, brief, duration_hint=answers.get("duration") if answers else None)
-        candidates = generate_candidates(workflow, brief, shot_plan=shot_plan)
+        candidate_count = (
+            self.app_config.get("rendering", {}).get("candidate_count", 4)
+            if isinstance(self.app_config, dict)
+            else 4
+        )
+        candidates = generate_candidates(workflow, brief, shot_plan=shot_plan, candidate_count=candidate_count)
         primary_candidate = candidates[0] if candidates else None
         critic_result = critique_candidate(primary_candidate, brief) if primary_candidate else None
         refiner = (
