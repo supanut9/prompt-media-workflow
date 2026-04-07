@@ -3,7 +3,10 @@ from __future__ import annotations
 from prompt_media_workflow.models import IntakeRequest, WorkflowRecord
 from prompt_media_workflow.stages.brief_building import build_brief
 from prompt_media_workflow.stages.clarification import build_clarification_turn
+from prompt_media_workflow.stages.critic import critique_candidate
+from prompt_media_workflow.stages.generation import generate_candidates
 from prompt_media_workflow.stages.prompt_analysis import analyze_prompt
+from prompt_media_workflow.stages.refiner import plan_refinement
 from prompt_media_workflow.stages.shot_planning import build_shot_plan
 
 
@@ -25,13 +28,29 @@ class WorkflowRunner:
         clarification = build_clarification_turn(analysis) if analysis.next_action == "ask" else None
         brief = build_brief(workflow, analysis, answers=answers)
         shot_plan = build_shot_plan(workflow, brief, duration_hint=answers.get("duration") if answers else None)
+        candidates = generate_candidates(workflow, brief, shot_plan=shot_plan)
+        primary_candidate = candidates[0] if candidates else None
+        critic_result = critique_candidate(primary_candidate, brief) if primary_candidate else None
+        refiner = (
+            plan_refinement(primary_candidate, brief, critic_result)
+            if primary_candidate and critic_result
+            else None
+        )
+
         workflow.medium = analysis.medium
         workflow.current_brief_id = brief.brief_id
-        workflow.status = "ready"
+        if primary_candidate:
+            workflow.active_candidate_id = primary_candidate.candidate_id
+            workflow.status = "reviewing"
+        else:
+            workflow.status = "ready"
         return {
             "workflow": workflow.model_dump(),
             "analysis": analysis.model_dump(),
             "clarification": clarification.model_dump() if clarification else None,
             "brief": brief.model_dump(),
             "shot_plan": shot_plan.model_dump() if shot_plan else None,
+            "candidates": [candidate.model_dump() for candidate in candidates],
+            "critic": critic_result.model_dump() if critic_result else None,
+            "refiner": refiner.model_dump() if refiner else None,
         }

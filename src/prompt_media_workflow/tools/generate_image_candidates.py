@@ -1,8 +1,18 @@
 from __future__ import annotations
 
 
-def generate_image_candidates(*, workflow_id: str, brief_id: str, candidate_count: int = 4) -> dict:
+def generate_image_candidates(
+    *,
+    workflow_id: str,
+    brief_id: str,
+    medium: str,
+    candidate_count: int = 4,
+    prompt: str | None = None,
+    negative_prompt: list[str] | None = None,
+    shot_plan_id: str | None = None,
+) -> dict:
     """Stub tool adapter for later backend integration."""
+    _ = (medium, prompt, negative_prompt, shot_plan_id)
     return {
         "generated_candidates": [
             {
@@ -15,4 +25,3 @@ def generate_image_candidates(*, workflow_id: str, brief_id: str, candidate_coun
             for index in range(candidate_count)
         ]
     }
-
