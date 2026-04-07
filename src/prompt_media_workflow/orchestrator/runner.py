@@ -52,6 +52,7 @@ class WorkflowRunner:
             quality=rendering_cfg.get("quality"),
             background=rendering_cfg.get("background"),
             output_format=rendering_cfg.get("format", "png"),
+            comfyui_config=rendering_cfg.get("comfyui"),
         )
         primary_candidate = candidates[0] if candidates else None
         critic_result = critique_candidate(primary_candidate, brief) if primary_candidate else None

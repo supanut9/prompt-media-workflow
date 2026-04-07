@@ -16,6 +16,7 @@ def generate_candidates(
     quality: str | None = None,
     background: str | None = None,
     output_format: str | None = "png",
+    comfyui_config: dict | None = None,
 ) -> list[CandidateRecord]:
     response = generate_image_candidates(
         workflow_id=workflow.workflow_id,
@@ -32,6 +33,7 @@ def generate_candidates(
         quality=quality,
         background=background,
         output_format=output_format,
+        comfyui_config=comfyui_config,
     )
     candidates: list[CandidateRecord] = []
     for record in response.get("generated_candidates", []):

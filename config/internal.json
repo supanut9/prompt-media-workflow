@@ -57,6 +57,13 @@
     "height": 1024,
     "quality": "medium",
     "background": "opaque",
-    "format": "png"
+    "format": "png",
+    "comfyui": {
+      "server_url": "http://127.0.0.1:8188",
+      "workflow_path": "comfyui/workflows/base.json",
+      "prompt_field": "{{PROMPT}}",
+      "negative_prompt_field": "{{NEGATIVE_PROMPT}}",
+      "timeout_seconds": 60
+    }
   }
 }

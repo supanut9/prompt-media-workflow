@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 from prompt_media_workflow.generators.openai_images import OpenAIImageGenerator
+from prompt_media_workflow.generators.comfyui import ComfyUIGenerator
 
 
 LOGGER = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ def generate_image_candidates(
     quality: str | None = None,
     background: str | None = None,
     output_format: str | None = "png",
+    comfyui_config: dict | None = None,
 ) -> dict:
     """Generator adapter that prefers OpenAI images and falls back to stubs."""
     if backend == "openai":
@@ -44,7 +46,7 @@ def generate_image_candidates(
         if generated:
             return {"generated_candidates": generated}
 
-    return {
+    result = {
         "generated_candidates": [
             {
                 "candidate_id": f"img_{index + 1:03d}",
@@ -56,6 +58,19 @@ def generate_image_candidates(
             for index in range(candidate_count)
         ]
     }
+    if backend == "comfyui" and comfyui_config:
+        generated = _try_generate_with_comfyui(
+            workflow_id=workflow_id,
+            brief_id=brief_id,
+            candidate_count=candidate_count,
+            prompt=prompt or "",
+            negative_prompt=", ".join(negative_prompt or []),
+            output_format=output_format,
+            comfy_cfg=comfyui_config,
+        )
+        if generated:
+            return {"generated_candidates": generated}
+    return result
 
 
 def _try_generate_with_openai(
@@ -111,6 +126,58 @@ def _try_generate_with_openai(
                 "asset_uri": str(path.relative_to(Path.cwd()) if path.is_absolute() else path),
                 "backend": "openai",
                 "model": model or "gpt-image-1.5",
+                "status": "generated",
+            }
+        )
+    return generated
+
+
+def _try_generate_with_comfyui(
+    *,
+    workflow_id: str,
+    brief_id: str,
+    candidate_count: int,
+    prompt: str,
+    negative_prompt: str,
+    output_format: str | None,
+    comfy_cfg: dict,
+) -> list[dict] | None:
+    generator = ComfyUIGenerator(
+        server_url=comfy_cfg.get("server_url", "http://127.0.0.1:8188"),
+        workflow_path=comfy_cfg.get("workflow_path", "comfyui/workflows/base.json"),
+        prompt_field=comfy_cfg.get("prompt_field", "{{PROMPT}}"),
+        negative_prompt_field=comfy_cfg.get("negative_prompt_field", "{{NEGATIVE_PROMPT}}"),
+        timeout_seconds=int(comfy_cfg.get("timeout_seconds", 60)),
+    )
+    if not generator.enabled:
+        LOGGER.info("ComfyUI workflow template not found; falling back to stub output")
+        return None
+
+    output_paths = [
+        Path("artifacts") / workflow_id / f"img_{index + 1:03d}.{output_format or 'png'}"
+        for index in range(candidate_count)
+    ]
+    try:
+        saved_paths = generator.generate(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            candidate_count=candidate_count,
+            output_paths=output_paths,
+        )
+    except Exception as exc:  # pragma: no cover - external dependency
+        LOGGER.warning("ComfyUI image generation failed: %s", exc)
+        return None
+
+    generated: list[dict] = []
+    for index, path in enumerate(saved_paths):
+        generated.append(
+            {
+                "candidate_id": f"img_{index + 1:03d}",
+                "workflow_id": workflow_id,
+                "brief_id": brief_id,
+                "asset_uri": str(path.relative_to(Path.cwd()) if path.is_absolute() else path),
+                "backend": "comfyui",
+                "model": comfy_cfg.get("workflow_path"),
                 "status": "generated",
             }
         )
